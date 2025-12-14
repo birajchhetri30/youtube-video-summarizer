@@ -1,4 +1,4 @@
-# 🎥 YouTube Transcript RAG Application
+# 🎥 YouTube Transcript Summarizer and Q&A
 
 A full-stack **Retrieval-Augmented Generation (RAG)** application that transforms YouTube videos into an interactive, searchable knowledge source. The system extracts video transcripts, generates concise summaries, and enables users to ask transcript-grounded questions using **AWS Bedrock** and **LangChain**.
 
