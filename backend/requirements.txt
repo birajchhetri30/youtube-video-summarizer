@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+youtube-transcript-api
+langchain
+langchain-aws
+langchain-chroma
+langchain_core
+langchain_text_splitters
+boto3
+python-dotenv
