@@ -21,10 +21,10 @@ A full-stack **Retrieval-Augmented Generation (RAG)** application that transform
 2. The backend extracts the video transcript
 3. The transcript is split into chunks and embedded
 4. Embeddings are stored in a vector database (Chroma)
-5. For Q&A:
+5. A summary of the full transcript is generated in parallel
+6. For Q&A:
    - Relevant transcript chunks are retrieved
    - The LLM generates answers grounded strictly in the transcript
-6. A summary of the full transcript is generated in parallel
 
 ---
 
@@ -76,4 +76,26 @@ Run the frontend:
 cd frontend
 npm install
 npm run dev
+```
+
+---
+
+## 🔌 API Endpoint
+
+### POST `/process`
+
+**Request Body**
+```
+{
+  "url": "https://www.youtube.com/watch?v=VIDEO_ID",
+  "question": "optional question about the video"
+}
+```
+
+### Response
+```
+{
+  "summary": "bullet point summary of the video",
+  "answer": "answer to the question (if provided)"
+}
 ```
