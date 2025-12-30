@@ -28,14 +28,31 @@ export default function Home() {
   };
 
   return (
-    <main style={{ padding: 40 }}>
-      <h1>🎥 YouTube Transcript RAG</h1>
+    <main className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-3xl mx-auto px-6 space-y-8">
+        <h1 className="text-4xl font-extrabold text-center text-gray-900">
+          🎥 YouTube Transcript RAG
+        </h1>
 
-      <UrlInput onSubmit={handleSubmit} loading={loading} />
+        {/* Input Card */}
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <UrlInput onSubmit={handleSubmit} loading={loading} />
+        </div>
 
-      {summary && <SummaryCard summary={summary} />}
+        {/* Summary Card */}
+        {summary && (
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <SummaryCard summary={summary} />
+          </div>
+        )}
 
-      {videoUrl && <QaCard url={videoUrl} />}
+        {/* Q&A Card */}
+        {videoUrl && (
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <QaCard url={videoUrl} />
+          </div>
+        )}
+      </div>
     </main>
   );
 }

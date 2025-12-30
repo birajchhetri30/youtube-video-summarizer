@@ -11,18 +11,18 @@ export default function UrlInput({ onSubmit, loading }: Props) {
   const [url, setUrl] = useState("");
 
   return (
-    <div style={{ marginBottom: 20 }}>
+    <div className="flex gap-3">
       <input
         type="text"
         placeholder="Paste YouTube URL"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
-        style={{ width: "70%", padding: 8 }}
+        className="flex-1 rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-black"
       />
       <button
         onClick={() => onSubmit(url)}
         disabled={loading}
-        style={{ marginLeft: 10, padding: 8 }}
+        className="rounded-lg bg-black px-6 py-3 text-white font-medium hover:bg-gray-800 disabled:opacity-50"
       >
         {loading ? "Processing..." : "Submit"}
       </button>
