@@ -31,7 +31,7 @@ export default function Home() {
     <main className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-3xl mx-auto px-6 space-y-8">
         <h1 className="text-4xl font-extrabold text-center text-gray-900">
-          🎥 YouTube Transcript RAG
+          🎥 YouTube Video Summarizer and Q&A
         </h1>
 
         {/* Input Card */}
