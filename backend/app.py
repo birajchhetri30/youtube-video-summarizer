@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from rag_pipeline import get_bedrock_client, run_rag_pipeline, get_transcript
+from rag_pipeline import get_bedrock_client, run_rag_pipeline, get_transcript, extract_video_id, get_or_create_summary
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -34,12 +34,17 @@ bedrock_client = get_bedrock_client(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AW
 # --------- API Endpoint ---------
 @app.post("/process")
 async def process_video(data: RequestBody):
-    transcript = get_transcript(data.url)
+    video_id = extract_video_id(data.url)
+    transcript = get_transcript(video_id, data.url)
 
-    qa_chain, summary_chain = run_rag_pipeline(transcript, bedrock_client)
+    qa_chain, summary_chain = run_rag_pipeline(
+        video_id,
+        transcript,
+        bedrock_client
+    )
 
     # Run summary
-    summary = summary_chain.invoke({"transcript": transcript})
+    summary = get_or_create_summary(video_id, summary_chain, transcript)
 
     # Run Q&A if question is provided
     answer = None

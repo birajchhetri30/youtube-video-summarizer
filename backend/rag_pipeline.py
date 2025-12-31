@@ -6,8 +6,42 @@ from langchain_chroma import Chroma
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnableLambda
 import boto3
+import os
 
+
+VECTORSTORE_DIR = "vectorstore"
+
+def get_vectorstore(video_id, chunks, embeddings):
+    persist_path = os.path.join(VECTORSTORE_DIR, video_id)
+
+    if os.path.exists(persist_path):
+        print(f"Loading existing vectorstore for {video_id}")
+        db = Chroma(
+            persist_directory=persist_path,
+            embedding_function=embeddings
+        )
+        # Check if the vectorstore has documents
+        if len(db.get()['ids']) == 0:
+            print(f"Vectorstore is empty, recreating for {video_id}")
+            db = Chroma.from_documents(
+                documents=chunks,
+                embedding=embeddings,
+                persist_directory=persist_path
+            )
+        return db
+
+    print(f"Creating vectorstore for {video_id}")
+    db = Chroma.from_documents(
+        documents=chunks,
+        embedding=embeddings,
+        persist_directory=persist_path
+    )
+    return db
+
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
 
 # ---------- AWS Bedrock Client ----------
 def get_bedrock_client(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, AWS_REGION):
@@ -33,25 +67,63 @@ def extract_video_id(url: str):
     return url
 
 
-def get_transcript(url: str):
-    video_id = extract_video_id(url)
+def get_transcript(video_id: str, url: str):
+    os.makedirs(VECTORSTORE_DIR, exist_ok=True)
+
+    video_dir = os.path.join(VECTORSTORE_DIR, video_id)
+    os.makedirs(video_dir, exist_ok=True)
+
+    path = os.path.join(video_dir, "transcript.txt")
+
+    if os.path.exists(path):
+        print(f"Loading cached transcript for {video_id}")
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read()
+
     transcript_obj = YouTubeTranscriptApi().fetch(video_id)
-    full_text = " ".join([snippet.text for snippet in transcript_obj.snippets])
-    return full_text
+    text = " ".join([s.text for s in transcript_obj.snippets])
+
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(text)
+
+    return text
+
+
+def get_or_create_summary(video_id, summary_chain, transcript):
+    path = os.path.join(VECTORSTORE_DIR, video_id, "summary.txt")
+
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read()
+
+    summary = summary_chain.invoke({"transcript": transcript})
+
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(summary)
+
+    return summary
 
 
 # ---------- RAG + Summary ----------
-def run_rag_pipeline(transcript_text, bedrock_client):
+def run_rag_pipeline(video_id, transcript_text, bedrock_client):
     # Create document
     docs = [Document(page_content=transcript_text)]
 
-    # Split into chunks
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=100)
+    # Split
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=800,
+        chunk_overlap=100
+    )
     chunks = text_splitter.split_documents(docs)
 
-    # Embeddings + Chroma
-    embeddings = BedrockEmbeddings(client=bedrock_client, model_id="amazon.titan-embed-text-v2:0")
-    db = Chroma.from_documents(documents=chunks, embedding=embeddings)
+    # Embeddings
+    embeddings = BedrockEmbeddings(
+        client=bedrock_client,
+        model_id="amazon.titan-embed-text-v2:0"
+    )
+
+    # ✅ Persisted Vector DB
+    db = get_vectorstore(video_id, chunks, embeddings)
     retriever = db.as_retriever()
 
     # QA Chain
@@ -72,7 +144,7 @@ Answer:""",
 
     qa_chain = (
             {
-                "context": retriever,
+                "context": retriever | RunnableLambda(format_docs),
                 "question": RunnablePassthrough(),
             }
             | qa_prompt
