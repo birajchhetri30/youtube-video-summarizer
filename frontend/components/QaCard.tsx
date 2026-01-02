@@ -24,7 +24,7 @@ export default function QaCard({ url }: Props) {
       const data = await processVideo(url, question);
       setAnswer(data.answer);
     } catch (err) {
-      setAnswer("Error fetching answer");
+      setAnswer(err instanceof Error ? `Error: ${err.message}` : 'Error fetching answer');
     }
     setLoading(false);
   };

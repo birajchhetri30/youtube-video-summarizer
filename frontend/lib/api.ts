@@ -11,7 +11,8 @@ export async function processVideo(
   });
 
   if (!res.ok) {
-    throw new Error("Failed to process video");
+    const errorData = await res.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(errorData.detail || 'Failed to process video');
   }
 
   return res.json();

@@ -10,18 +10,20 @@ export default function Home() {
   const [summary, setSummary] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (url: string) => {
     setLoading(true);
     setSummary(null);
     setVideoUrl(null);
+    setError(null);
 
     try {
       const data = await processVideo(url);
       setSummary(data.summary);
       setVideoUrl(url);
     } catch (err) {
-      alert("Failed to process video");
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
     }
 
     setLoading(false);
@@ -38,6 +40,13 @@ export default function Home() {
         <div className="bg-white rounded-2xl shadow-lg p-6">
           <UrlInput onSubmit={handleSubmit} loading={loading} />
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-700">
+            {error}
+          </div>
+        )}
 
         {/* Summary Card */}
         {summary && (

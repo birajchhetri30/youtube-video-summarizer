@@ -64,7 +64,7 @@ def extract_video_id(url: str):
         return url.split("watch?v=")[1].split("&")[0]
     if "youtu.be/" in url:
         return url.split("youtu.be/")[1].split("?")[0]
-    return url
+    return None
 
 
 def get_transcript(video_id: str, url: str):
