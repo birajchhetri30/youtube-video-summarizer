@@ -6,10 +6,10 @@ import { useState } from "react";
 import { processVideo } from "@/lib/api";
 
 type Props = {
-  url: string;
+  urls: string[];
 };
 
-export default function QaCard({ url }: Props) {
+export default function QaCard({ urls }: Props) {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -21,7 +21,7 @@ export default function QaCard({ url }: Props) {
     setAnswer(null);
 
     try {
-      const data = await processVideo(url, question);
+      const data = await processVideo(urls, question);
       setAnswer(data.answer);
     } catch (err) {
       setAnswer(err instanceof Error ? `Error: ${err.message}` : 'Error fetching answer');
@@ -34,7 +34,7 @@ export default function QaCard({ url }: Props) {
       <div className="flex gap-3">
         <input
           type="text"
-          placeholder="Ask something about the video"
+          placeholder="Ask something about the videos"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           className="flex-1 rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-black"

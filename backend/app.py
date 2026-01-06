@@ -1,7 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from rag_pipeline import get_bedrock_client, run_rag_pipeline, get_transcript, extract_video_id, get_or_create_summary
+from rag_pipeline import get_bedrock_client, run_rag_pipeline, get_transcript, extract_video_id, get_or_create_summary, get_video_title
 import os
+from typing import List
 
 from youtube_transcript_api import (
     TranscriptsDisabled,
@@ -25,7 +26,7 @@ app.add_middleware(
 
 # --------- Request Body ---------
 class RequestBody(BaseModel):
-    url: str
+    urls: List[str]
     question: str = None
 
 
@@ -41,32 +42,47 @@ bedrock_client = get_bedrock_client(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AW
 # --------- API Endpoint ---------
 @app.post("/process")
 async def process_video(data: RequestBody):
-    video_id = extract_video_id(data.url)
-    if not video_id:
-        raise HTTPException(status_code=400, detail="Invalid URL")
-
-    try:
-        transcript = get_transcript(video_id, data.url)
-    except TranscriptsDisabled:
-        raise HTTPException(
-            status_code=400,
-            detail="Transcripts are disabled for this video"
-        )
-    except NoTranscriptFound:
-        raise HTTPException(
-            status_code=400,
-            detail="No transcript available for this video"
-        )
-    except VideoUnavailable:
-        raise HTTPException(
-            status_code=404,
-            detail="YouTube video is unavailable"
-        )
+    video_ids = []
+    transcripts = []
+    for url in data.urls:
+        video_id = extract_video_id(url)
+        if not video_id:
+            raise HTTPException(status_code=400, detail=f"Invalid URL: {url}")
+        video_ids.append(video_id)
+    
+    if len(video_ids) > 3:
+        raise HTTPException(status_code=400, detail="Maximum 3 videos allowed per request")
+    
+    # Sort video_ids for consistent combined_id
+    combined_id = "_".join(sorted(video_ids))
+    
+    combined_transcript = ""
+    for i, (url, video_id) in enumerate(zip(data.urls, video_ids)):
+        try:
+            transcript = get_transcript(video_id, url)
+            title = get_video_title(video_id)
+            transcripts.append(transcript)
+            combined_transcript += f"\n\n--- Video {i+1}: {title} ({url}) ---\n{transcript}"
+        except TranscriptsDisabled:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Transcripts are disabled for video: {url}"
+            )
+        except NoTranscriptFound:
+            raise HTTPException(
+                status_code=400,
+                detail=f"No transcript available for video: {url}"
+            )
+        except VideoUnavailable:
+            raise HTTPException(
+                status_code=404,
+                detail=f"YouTube video is unavailable: {url}"
+            )
 
     try:
         qa_chain, summary_chain = run_rag_pipeline(
-            video_id,
-            transcript,
+            combined_id,
+            combined_transcript,
             bedrock_client
         )
     except Exception as e:
@@ -77,7 +93,7 @@ async def process_video(data: RequestBody):
 
     # Run summary
     try:
-        summary = get_or_create_summary(video_id, summary_chain, transcript)
+        summary = get_or_create_summary(combined_id, summary_chain, combined_transcript)
     except Exception as e:
         raise HTTPException(
             status_code=500,

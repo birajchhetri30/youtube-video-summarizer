@@ -1,5 +1,5 @@
 export async function processVideo(
-  url: string,
+  urls: string[],
   question?: string
 ) {
   const res = await fetch("http://localhost:8000/process", {
@@ -7,7 +7,7 @@ export async function processVideo(
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ url, question }),
+    body: JSON.stringify({ urls, question }),
   });
 
   if (!res.ok) {

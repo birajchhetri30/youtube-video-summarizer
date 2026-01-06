@@ -9,6 +9,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda
 import boto3
 import os
+import requests
 
 
 VECTORSTORE_DIR = "vectorstore"
@@ -89,6 +90,19 @@ def get_transcript(video_id: str, url: str):
     return text
 
 
+def get_video_title(video_id: str):
+    try:
+        response = requests.get(f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={video_id}&format=json")
+        if response.status_code == 200:
+            data = response.json()
+            return data.get("title", f"Video {video_id}")
+        else:
+            return f"Video {video_id}"
+    except Exception as e:
+        print(f"Failed to fetch title for {video_id}: {e}")
+        return f"Video {video_id}"
+
+
 def get_or_create_summary(video_id, summary_chain, transcript):
     path = os.path.join(VECTORSTORE_DIR, video_id, "summary.txt")
 
@@ -129,10 +143,10 @@ def run_rag_pipeline(video_id, transcript_text, bedrock_client):
     # QA Chain
     qa_prompt = PromptTemplate(
         template="""You are a helpful AI assistant.
-Use ONLY the following transcript excerpts to answer the question.
-If not found, say "I don't know based on the transcript."
+Use ONLY the following transcript excerpts from one or more YouTube videos to answer the question.
+If not found, say "I don't know based on the transcripts."
 
-Transcript:
+Transcripts:
 {context}
 
 Question:
@@ -154,9 +168,10 @@ Answer:""",
 
     # Summary Chain
     summary_prompt = PromptTemplate(
-        template="""Summarize the following YouTube transcript into clear bullet-point key insights.
+        template="""Summarize the following YouTube transcripts into clear bullet-point key insights.
+For each video, first output the video title (in bold text), then provide the summary points.
 
-Transcript:
+Transcripts:
 {transcript}
 
 Summary:""",

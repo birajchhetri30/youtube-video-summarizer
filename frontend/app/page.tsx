@@ -8,20 +8,20 @@ import { processVideo } from "@/lib/api";
 
 export default function Home() {
   const [summary, setSummary] = useState<string | null>(null);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoUrls, setVideoUrls] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (url: string) => {
+  const handleSubmit = async (urls: string[]) => {
     setLoading(true);
     setSummary(null);
-    setVideoUrl(null);
+    setVideoUrls([]);
     setError(null);
 
     try {
-      const data = await processVideo(url);
+      const data = await processVideo(urls);
       setSummary(data.summary);
-      setVideoUrl(url);
+      setVideoUrls(urls);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     }
@@ -56,9 +56,9 @@ export default function Home() {
         )}
 
         {/* Q&A Card */}
-        {videoUrl && (
+        {videoUrls.length > 0 && (
           <div className="bg-white rounded-2xl shadow-lg p-6">
-            <QaCard url={videoUrl} />
+            <QaCard urls={videoUrls} />
           </div>
         )}
       </div>
