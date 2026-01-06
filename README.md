@@ -1,15 +1,15 @@
 # 🎥 YouTube Transcript Summarizer and Q&A
 
-A full-stack **Retrieval-Augmented Generation (RAG)** application that transforms YouTube videos into an interactive, searchable knowledge source. The system extracts video transcripts, generates concise summaries, and enables users to ask transcript-grounded questions using **AWS Bedrock** and **LangChain**.
+A full-stack **Retrieval-Augmented Generation (RAG)** application that transforms YouTube videos into an interactive, searchable knowledge source. The system extracts video transcripts, generates concise summaries with titles, and enables users to ask transcript-grounded questions across multiple videos using **AWS Bedrock** and **LangChain**.
 
 ---
 
 ## 🚀 Features
 
-- 📄 Automatic YouTube transcript extraction
-- 📌 Bullet-point summarization of video content
-- ❓ Context-aware question answering
-- 🧠 Retrieval-Augmented Generation (RAG)
+- 📄 Automatic YouTube transcript extraction (up to 3 videos)
+- 📌 Bullet-point summarization with video titles
+- ❓ Context-aware question answering across multiple videos
+- 🧠 Retrieval-Augmented Generation (RAG) with combined knowledge base
 - ☁️ Powered by AWS Bedrock LLMs
 - ⚡ FastAPI backend & Next.js frontend
 
@@ -17,14 +17,15 @@ A full-stack **Retrieval-Augmented Generation (RAG)** application that transform
 
 ## 🧠 How It Works
 
-1. User submits a YouTube video URL
-2. The backend extracts the video transcript
-3. The transcript is split into chunks and embedded
-4. Embeddings are stored in a vector database (Chroma)
-5. A summary of the full transcript is generated in parallel
-6. For Q&A:
-   - Relevant transcript chunks are retrieved
-   - The LLM generates answers grounded strictly in the transcript
+1. User submits up to 3 YouTube video URLs
+2. The backend extracts transcripts and titles for each video
+3. Transcripts are combined into a single knowledge base
+4. The combined content is split into chunks and embedded
+5. Embeddings are stored in a vector database (Chroma)
+6. A summary of all videos is generated, including titles
+7. For Q&A:
+   - Relevant transcript chunks are retrieved from the combined base
+   - The LLM generates answers grounded in the transcripts of all videos
 
 ---
 
@@ -87,15 +88,20 @@ npm run dev
 **Request Body**
 ```
 {
-  "url": "https://www.youtube.com/watch?v=VIDEO_ID",
-  "question": "optional question about the video"
+  "urls": ["https://www.youtube.com/watch?v=VIDEO_ID1", "https://www.youtube.com/watch?v=VIDEO_ID2"],
+  "question": "optional question about the videos"
 }
 ```
+
+**Notes:**
+- Supports up to 3 YouTube URLs in the `urls` array.
+- Summaries include video titles for each video.
+- Q&A answers can draw from the combined knowledge of all provided videos.
 
 ### Response
 ```
 {
-  "summary": "bullet point summary of the video",
+  "summary": "Bullet-point summary with titles and key insights from all videos",
   "answer": "answer to the question (if provided)"
 }
 ```
