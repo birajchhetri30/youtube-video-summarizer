@@ -169,7 +169,7 @@ Answer:""",
     # Summary Chain
     summary_prompt = PromptTemplate(
         template="""Summarize the following YouTube transcripts into clear bullet-point key insights.
-For each video, first output the video title (in bold text), then provide the summary points.
+For each video, first output the video title (in bold, not as a heading), then provide the summary points.
 
 Transcripts:
 {transcript}
